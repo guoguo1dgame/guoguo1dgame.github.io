@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>iOS服务发布页面</title>
+    <style>
+      :root {
+        --bg: #eef1f5;
+        --panel: #ffffff;
+        --card: #f6f7f9;
+        --card-border: #e6e9ee;
+        --ink: #16181d;
+        --muted: #5f6672;
+        --blue: #0a6ae0;
+        --blue-hover: #095fc6;
+        --blue-active: #0853ad;
+        --shadow: 0 10px 30px rgba(20, 30, 50, 0.08);
+        --toast-bg: #16181d;
+        --toast-ink: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #101216;
+          --panel: #1a1d23;
+          --card: #22262e;
+          --card-border: #30363f;
+          --ink: #f2f4f7;
+          --muted: #a7aeb9;
+          --blue: #2f7fe0;
+          --blue-hover: #3a8aea;
+          --blue-active: #2a72cc;
+          --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+          --toast-bg: #f2f4f7;
+          --toast-ink: #16181d;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+          "Microsoft YaHei", "Noto Sans SC", "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        padding: 40px 16px 56px;
+      }
+      .wrap { max-width: 680px; margin: 0 auto; }
+      h1 {
+        text-align: center;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        margin: 8px 0 22px;
+      }
+      .panel {
+        background: var(--panel);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 18px 16px 16px;
+      }
+      .card h2 {
+        font-size: 17px;
+        font-weight: 700;
+        margin: 0 0 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card h2::before {
+        content: "";
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: var(--blue);
+        flex: none;
+      }
+      .card p {
+        margin: 0 0 14px;
+        font-size: 14px;
+        line-height: 1.65;
+        color: var(--muted);
+      }
+      .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        min-height: 48px;
+        padding: 12px 16px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--blue);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        text-align: center;
+        transition: background 0.15s ease, transform 0.05s ease;
+      }
+      .btn:hover { background: var(--blue-hover); }
+      .btn:active { background: var(--blue-active); transform: scale(0.99); }
+      .btn .num {
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.5px;
+        background: rgba(255, 255, 255, 0.18);
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .btn-col { display: flex; flex-direction: column; gap: 10px; }
+      .group-line {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 8px;
+        margin: -4px 0 14px;
+        flex-wrap: wrap;
+      }
+      .group-line .label { font-size: 14px; color: var(--muted); }
+      .group-line .big {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        font-variant-numeric: tabular-nums;
+        color: var(--ink);
+      }
+      .foot {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 22px;
+        line-height: 1.7;
+      }
+      /* toast */
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(28px + env(safe-area-inset-bottom));
+        transform: translateX(-50%) translateY(16px);
+        background: var(--toast-bg);
+        color: var(--toast-ink);
+        font-size: 14px;
+        font-weight: 600;
+        padding: 12px 20px;
+        border-radius: 999px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        max-width: calc(100vw - 32px);
+        text-align: center;
+        z-index: 50;
+      }
+      .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+      /* modal */
+      .overlay {
+        position: fixed; inset: 0;
+        background: rgba(10, 14, 22, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 40;
+      }
+      .overlay.open { display: flex; }
+      .dialog {
+        background: var(--panel);
+        color: var(--ink);
+        border-radius: 16px;
+        width: 100%;
+        max-width: 420px;
+        padding: 24px 20px 20px;
+        box-shadow: var(--shadow);
+      }
+      .dialog h3 { margin: 0 0 6px; font-size: 18px; font-weight: 800; }
+      .dialog p { margin: 0 0 16px; font-size: 14px; line-height: 1.65; color: var(--muted); }
+      .contact-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      .contact-row .who { font-size: 13px; color: var(--muted); }
+      .contact-row .val { font-size: 17px; font-weight: 800; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+      .copy-btn {
+        flex: none;
+        border: 0;
+        background: var(--blue);
+        color: #fff;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 10px 16px;
+        min-height: 40px;
+        cursor: pointer;
+      }
+      .copy-btn:hover { background: var(--blue-hover); }
+      .dialog .close-btn {
+        width: 100%;
+        margin-top: 6px;
+        border: 1px solid var(--card-border);
+        background: transparent;
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 12px;
+        min-height: 46px;
+        cursor: pointer;
+      }
+      @media (max-width: 480px) {
+        body { padding: 28px 12px 48px; }
+        h1 { font-size: 24px; }
+        .panel { padding: 14px; gap: 12px; }
+        .btn-row { grid-template-columns: 1fr; }
+        .group-line .big { font-size: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>iOS服务发布页面</h1>
+
+      <div class="panel">
+        <section class="card">
+          <h2>苹果共享ID</h2>
+          <p>我们提供多种优质服务，包括 App 加速、国际版应用获取、苹果共享 ID 等。另有苹果 ID 代创建：独享号、共享号均可，各国家均可定制。</p>
+          <button class="btn" type="button" data-service="苹果共享ID账号">🍎 点击获取苹果共享ID账号</button>
+        </section>
+
+        <section class="card">
+          <h2>获取小火箭下载ID</h2>
+          <p>提供小火箭及其他海外应用账号服务，点击下方获取火箭 ID。</p>
+          <button class="btn" type="button" data-service="小火箭下载ID">🚀 点击获取小火箭下载ID</button>
+        </section>
+
+        <section class="card">
+          <h2>海外应用账号</h2>
+          <p>提供 ins、WhatsApp、Facebook、X 及其他海外应用账号服务，点击下方咨询购买苹果 ID 海外账号。</p>
+          <button class="btn" type="button" data-service="苹果ID海外账号">🚀 点击购买苹果ID海外账号</button>
+        </section>
+
+        <section class="card">
+          <h2>跨境出海一站式服务</h2>
+          <p>跨境专用网络、独享 / 共享原生 IP、双 ISP 家宽原生静态 IP 直播专线、TK / FB / 谷歌私域直播账号、AI 代充，点击下方咨询。</p>
+          <button class="btn" type="button" data-service="跨境出海一站式服务">点击咨询跨境服务</button>
+        </section>
+
+        <section class="card" id="join">
+          <h2>加入我们</h2>
+          <p>网站打不开，请尝试更换网络，点击下方加入交流群或联系客服。</p>
+          <div class="group-line">
+            <span class="label">QQ交流群群号</span>
+            <span class="big">1108509444</span>
+          </div>
+          <div class="btn-col">
+            <button class="btn" type="button" id="joinGroupBtn">点击加入QQ交流群 <span class="num">1108509444</span></button>
+            <div class="btn-row">
+              <button class="btn" type="button" id="copyGroupBtn">复制群号</button>
+              <button class="btn" type="button" id="serviceBtn">点击联系QQ客服 <span class="num">1269206583</span></button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <p class="foot">QQ客服：1269206583 · QQ交流群：1108509444</p>
+    </main>
+
+    <!-- 服务咨询弹窗 -->
+    <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+      <div class="dialog">
+        <h3 id="dlgTitle">获取服务</h3>
+        <p id="dlgText">请通过 QQ 客服或交流群联系我们获取。</p>
+        <div class="contact-row">
+          <div>
+            <div class="who">QQ客服</div>
+            <div class="val">1269206583</div>
+          </div>
+          <button class="copy-btn" type="button" data-copy="1269206583" data-what="QQ客服号">复制</button>
+        </div>
+        <div class="contact-row">
+          <div>
+            <div class="who">QQ交流群</div>
+            <div class="val">1108509444</div>
+          </div>
+          <button class="copy-btn" type="button" data-copy="1108509444" data-what="群号">复制</button>
+        </div>
+        <button class="close-btn" type="button" id="closeDlg">关闭</button>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      (function () {
+        var toast = document.getElementById('toast');
+        var timer = null;
+        function showToast(msg) {
+          toast.textContent = msg;
+          toast.classList.add('show');
+          clearTimeout(timer);
+          timer = setTimeout(function () { toast.classList.remove('show'); }, 2600);
+        }
+        function copyText(text, done) {
+          function fallback() {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta);
+            done();
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, fallback);
+          } else {
+            fallback();
+          }
+        }
+
+        var GROUP = '1108509444';
+        var SERVICE_QQ = '1269206583';
+
+        document.getElementById('joinGroupBtn').addEventListener('click', function () {
+          copyText(GROUP, function () {
+            showToast('群号 ' + GROUP + ' 已复制，打开 QQ 搜索群号即可加群');
+          });
+          // 尝试唤起手机 QQ 打开群资料卡（桌面端或未装 QQ 时无效果，群号已复制兜底）
+          try {
+            var ifr = document.createElement('iframe');
+            ifr.style.display = 'none';
+            ifr.src = 'mqqapi://card/show_pslcard?src_type=internal&version=1&uin=' + GROUP + '&card_type=group&source=qrcode';
+            document.body.appendChild(ifr);
+            setTimeout(function () { document.body.removeChild(ifr); }, 1200);
+          } catch (e) {}
+        });
+        document.getElementById('copyGroupBtn').addEventListener('click', function () {
+          copyText(GROUP, function () { showToast('群号 ' + GROUP + ' 已复制'); });
+        });
+        document.getElementById('serviceBtn').addEventListener('click', function () {
+          copyText(SERVICE_QQ, function () {
+            showToast('客服 QQ ' + SERVICE_QQ + ' 已复制，打开 QQ 搜索添加');
+          });
+        });
+
+        // 服务按钮 -> 弹窗
+        var overlay = document.getElementById('overlay');
+        var dlgTitle = document.getElementById('dlgTitle');
+        var dlgText = document.getElementById('dlgText');
+        var serviceBtns = document.querySelectorAll('[data-service]');
+        for (var i = 0; i < serviceBtns.length; i++) {
+          serviceBtns[i].addEventListener('click', function () {
+            var name = this.getAttribute('data-service');
+            dlgTitle.textContent = name;
+            dlgText.textContent = '「' + name + '」请通过下方 QQ 客服咨询获取，或加入 QQ 交流群。';
+            overlay.classList.add('open');
+          });
+        }
+        document.getElementById('closeDlg').addEventListener('click', function () {
+          overlay.classList.remove('open');
+        });
+        overlay.addEventListener('click', function (e) {
+          if (e.target === overlay) overlay.classList.remove('open');
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') overlay.classList.remove('open');
+        });
+
+        var copyBtns = document.querySelectorAll('[data-copy]');
+        for (var j = 0; j < copyBtns.length; j++) {
+          copyBtns[j].addEventListener('click', function () {
+            var v = this.getAttribute('data-copy');
+            var what = this.getAttribute('data-what');
+            copyText(v, function () { showToast(what + ' ' + v + ' 已复制'); });
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
